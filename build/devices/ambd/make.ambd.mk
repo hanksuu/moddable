@@ -17,7 +17,7 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-BASE = ../../../../
+BASE = $(SDK_ROOT)
 SDK_BASE = $(BASE)
 
 HW_DEBUG_OPT = -O0
