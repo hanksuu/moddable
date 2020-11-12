@@ -106,7 +106,28 @@
 				"wifi",
 				"net"
 			]
-		},	
+		},
+		"ambd": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/ambd/*",
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/ambd/*",
+					"$(MODULES)/network/sntp/*",
+					"$(MODULES)/network/wifi/*",
+					"$(MODULES)/network/wifi/ambd/*"
+				],
+				"setup/network": "$(BUILD)/devices/ambd/setup/network"
+			},
+			"preload": [
+				"socket",
+				"setup/network",
+				"sntp",
+				"wifi",
+				"net"
+			]
+		},
 		"...": {
 			"error": "manifest_net - unsupported platform"
 		}

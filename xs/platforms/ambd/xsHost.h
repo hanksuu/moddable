@@ -212,7 +212,7 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 
 /* C */
 
-#include <ctype.h>
+//#include <ctype.h>
 #include <limits.h>
 #include <setjmp.h>
 #include <stdarg.h>

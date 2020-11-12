@@ -43,7 +43,7 @@ C_FLAGS += -nostartfiles
 C_FLAGS += -nostdlib
 C_FLAGS += -Wall
 C_FLAGS += -Wpointer-arith
-C_FLAGS += -Wstrict-prototypes
+#C_FLAGS += -Wstrict-prototypes
 C_FLAGS += -Wundef
 C_FLAGS += -Wno-write-strings
 C_FLAGS += -Wno-maybe-uninitialized
@@ -58,6 +58,11 @@ C_FLAGS += -DCONFIG_USE_MBEDTLS_ROM_ALG
 C_FLAGS += -DCONFIG_FUNCION_O0_OPTIMIZE
 C_FLAGS += -DDM_ODM_SUPPORT_TYPE=32
 
+# avoid warning, need to check
+C_FLAGS += -Wno-missing-field-initializers
+C_FLAGS += -DESP32=0
+C_FLAGS += -DMOD_TASKS=0
+C_FLAGS += -D__LP64__=0
 
 
 #ifeq ($(DEBUG),1)
@@ -123,7 +128,11 @@ INC_DIRS = \
 	$(SDK_BASE)/component/soc/realtek/amebad/misc \
 	$(SDK_BASE)/component/soc/realtek/amebad/swlib/os_dep/include \
 	$(SDK_BASE)/component/soc/realtek/amebad/swlib/os_dep/../ \
-	$(SDK_BASE)/component/soc/realtek/amebad/swlib/string
+	$(SDK_BASE)/component/soc/realtek/amebad/swlib/string \
+	$(SDK_BASE)/component/common/network/lwip/lwip_v2.0.2/src/include \
+	$(SDK_BASE)/component/common/network/lwip/lwip_v2.0.2/src/include/lwip \
+	$(SDK_BASE)/component/common/network/lwip/lwip_v2.0.2/port/realtek \
+	$(SDK_BASE)/component/common/network
 
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \
@@ -230,7 +239,7 @@ C_DEFINES = \
 #	C_DEFINES += -DDEBUG=1 -DmxDebug=1
 #	C_FLAGS += $(HW_DEBUG_OPT)
 #else
-	C_FLAGS += $(HW_OPT)
+	C_FLAGS += $(HW_OPT) -DmxDebug=0
 #endif
 ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1

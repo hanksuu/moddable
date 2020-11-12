@@ -31,6 +31,11 @@
 static int gMode = 0;
 static void initWiFi(void);
 static rtw_result_t app_scan_result_handler( rtw_scan_handler_result_t* malloced_scan_result );
+static rtw_network_info_t wifi = {0};
+static rtw_ap_info_t ap = {0};
+static unsigned char password[65] = {0};
+static int mode = 0;
+static int gWiFiStatus = -1;
 
 struct wifiScanRecord {
     xsSlot          callback;
@@ -40,25 +45,38 @@ typedef struct wifiScanRecord wifiScanRecord;
 
 static wifiScanRecord *gScan;
 
+typedef struct xsWiFiRecord xsWiFiRecord;
+typedef xsWiFiRecord *xsWiFi;
+
+struct xsWiFiRecord {
+    xsWiFi              next;
+    xsMachine           *the;
+    xsSlot              obj;
+    uint8_t             haveCallback;
+};
+
+static xsWiFi gWiFi;
+
+
 void xs_wifi_set_mode(xsMachine *the)
 {
     int mode = xsmcToInteger(xsArg(0));
 
     initWiFi();
-    if (1 == mode)
+    if (RTW_MODE_STA == mode)
     {
         wifi_set_mode(RTW_MODE_STA);
-        gMode = 1;
+        gMode = RTW_MODE_STA;
     }
-    else if (2 == mode)
+    else if (RTW_MODE_AP == mode)
     {
         wifi_set_mode(RTW_MODE_AP);
-        gMode = 2;
+        gMode = RTW_MODE_AP;
     }
-    else if (3 == mode)
+    else if (RTW_MODE_STA_AP == mode)
     {
         wifi_set_mode(RTW_MODE_STA_AP);
-        gMode = 3;
+        gMode = RTW_MODE_STA_AP;
     }
     else
     {
@@ -69,13 +87,21 @@ void xs_wifi_set_mode(xsMachine *the)
 void xs_wifi_get_mode(xsMachine *the)
 {
     initWiFi();
+	int mode = 0;
+	u8 *ifname[1] = {(u8*)WLAN0_NAME};
 
-    if (1 == gMode)
-        xsmcSetInteger(xsResult, 1);
-    else if (2 == gMode)
-        xsmcSetInteger(xsResult, 2);
-    else if (3 == gMode)
-        xsmcSetInteger(xsResult, 3);
+	if(wext_get_mode(ifname, &mode) < 0)
+		return;
+
+	switch(mode) {
+		case IW_MODE_MASTER:
+			xsmcSetInteger(xsResult, 2); // RTW_MODE_AP;
+			break;
+		case IW_MODE_INFRA:
+		default:
+			xsmcSetInteger(xsResult, 1); // RTW_MODE_STA;
+			break;
+	}
 }
 
 void xs_wifi_scan(xsMachine *the)
@@ -184,89 +210,147 @@ static rtw_result_t app_scan_result_handler( rtw_scan_handler_result_t* malloced
     return RTW_SUCCESS;
 }
 
-void xs_wifi_connect(xsMachine *the)
+static void init_wifi_struct(void)
 {
-#if 0
-    wifi_config_t config;
-    char *str;
-    int argc = xsmcArgc;
-    wifi_mode_t mode;
-    int channel;
-
-    if (gWiFiState > 1) {
-        gWiFiState = 2;
-        gDisconnectReason = 0;
-        esp_wifi_disconnect();
-    }
-
-    if (0 == argc)
-        return;
-
-    initWiFi();
-
-    c_memset(&config, 0, sizeof(config));
-
-    config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
-    config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
-
-    xsmcVars(2);
-    xsmcGet(xsVar(0), xsArg(0), xsID_ssid);
-    if (!xsmcTest(xsVar(0)))
-        xsUnknownError("ssid required");
-    str = xsmcToString(xsVar(0));
-    if (espStrLen(str) > (sizeof(config.sta.ssid) - 1))
-        xsUnknownError("ssid too long - 32 bytes max");
-    espMemCpy(config.sta.ssid, str, espStrLen(str));
-
-    xsmcGet(xsVar(0), xsArg(0), xsID_password);
-    if (xsmcTest(xsVar(0))) {
-        str = xsmcToString(xsVar(0));
-        if (espStrLen(str) > (sizeof(config.sta.password) - 1))
-            xsUnknownError("password too long - 64 bytes max");
-        espMemCpy(config.sta.password, str, espStrLen(str));
-    }
-
-    if (xsmcHas(xsArg(0), xsID_bssid)) {
-        xsmcGet(xsVar(0), xsArg(0), xsID_bssid);
-        if (sizeof(config.sta.bssid) != xsmcGetArrayBufferLength(xsVar(0)))
-            xsUnknownError("bssid must be 6 bytes");
-        xsmcGetArrayBufferData(xsVar(0), 0, config.sta.bssid, sizeof(config.sta.bssid));
-        config.sta.bssid_set = 1;
-    }
-
-    if (xsmcHas(xsArg(0), xsID_channel)) {
-        xsmcGet(xsVar(0), xsArg(0), xsID_channel);
-        channel = xsmcToInteger(xsVar(0));
-        if ((channel < 1) || (channel > 13))
-            xsUnknownError("invalid channel");
-        config.sta.channel = channel;
-    }
-
-    esp_wifi_get_mode(&mode);
-    if ((WIFI_MODE_STA != mode) && (WIFI_MODE_APSTA != mode))
-        esp_wifi_set_mode(WIFI_MODE_STA);
-
-    esp_wifi_set_config(WIFI_IF_STA, &config);
-
-    gWiFiConnectRetryRemaining = MODDEF_WIFI_ESP32_CONNECT_RETRIES;
-    if (0 != esp_wifi_connect())
-        xsUnknownError("esp_wifi_connect failed");
-#else
-    printf("%s, need to implement\n",__FUNCTION__);
-#endif
+	memset(wifi.ssid.val, 0, sizeof(wifi.ssid.val));
+	memset(wifi.bssid.octet, 0, ETH_ALEN);
+	memset(password, 0, sizeof(password));
+	wifi.ssid.len = 0;
+	wifi.password = NULL;
+	wifi.password_len = 0;
+	wifi.key_id = -1;
+	memset(ap.ssid.val, 0, sizeof(ap.ssid.val));
+	ap.ssid.len = 0;
+	ap.password = NULL;
+	ap.password_len = 0;
+	ap.channel = 1;
 }
 
-typedef struct xsWiFiRecord xsWiFiRecord;
-typedef xsWiFiRecord *xsWiFi;
+static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	xsWiFi wifi = refcon;
+	const char *msg;
 
-struct xsWiFiRecord {
-    xsWiFi              next;
-    xsMachine           *the;
-    xsSlot              obj;
-    uint8_t             haveCallback;
-};
+	switch (gWiFiStatus) {
+		case RTW_SUCCESS:
+			msg = "connect";
+			break;
+		default:
+			msg = "disconnect";
+			break;
+	}
 
-static xsWiFi gWiFi;
+	xsBeginHost(the);
+		xsCall1(wifi->obj, xsID_callback, xsString(msg));
+	xsEndHost(the);
+}
+
+void wlan_callback_handler(void)
+{
+ 	xsWiFi walker;
+	for (walker = gWiFi; NULL != walker; walker = walker->next)
+	{
+		modMessagePostToMachine(walker->the, NULL, 0, wifiEventPending, walker);
+	}
+}
+
+void xs_wifi_connect(xsMachine *the)
+{
+	char *str;
+	int argc = xsmcArgc;
+	int ret;
+	int channel;
+	int assoc_by_bssid = 0;
+	int pscan_config;
+
+	if (0 == argc)
+		return;
+
+	initWiFi();
+
+	init_wifi_struct();
+
+	xsmcVars(2);
+	xsmcGet(xsVar(0), xsArg(0), xsID_ssid);
+	if (!xsmcTest(xsVar(0)))
+		xsUnknownError("ssid required");
+	str = xsmcToString(xsVar(0));
+	strcpy((char *)wifi.ssid.val, str);
+	wifi.ssid.len = strlen(str);
+
+	xsmcGet(xsVar(0), xsArg(0), xsID_password);
+	if (xsmcTest(xsVar(0))) {
+		str = xsmcToString(xsVar(0));
+		strcpy((char *)password, str);
+		wifi.password = password;
+		wifi.password_len = strlen(str);
+	}
+
+	if (xsmcHas(xsArg(0), xsID_bssid)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_bssid);
+
+		if (sizeof(wifi.bssid.octet) != xsmcGetArrayBufferLength(xsVar(0)))
+			xsUnknownError("bssid must be 6 bytes");
+		xsmcGetArrayBufferData(xsVar(0), 0, wifi.bssid.octet, sizeof(wifi.bssid.octet));
+		assoc_by_bssid = 1;
+	}
+
+	if(wifi.password != NULL){
+		if((wifi.key_id >= 0)&&(wifi.key_id <= 3)) {
+			wifi.security_type = RTW_SECURITY_WEP_PSK;
+		}
+		else{
+			wifi.security_type = RTW_SECURITY_WPA2_AES_PSK;
+		}
+	}
+	else{
+		wifi.security_type = RTW_SECURITY_OPEN;
+	}
+
+	if (xsmcHas(xsArg(0), xsID_channel)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_channel);
+		channel = xsmcToInteger(xsVar(0));
+		if ((channel < 1) || (channel > 13))
+			xsUnknownError("invalid channel");
+		pscan_config = PSCAN_ENABLE;
+		wifi_set_pscan_chan(&channel, &pscan_config, 1);
+	}
+
+	//Check if in AP mode
+	wext_get_mode(WLAN0_NAME, &mode);
+	if(mode == IW_MODE_MASTER) {
+		dhcps_deinit();
+
+		if (wifi_set_mode(RTW_MODE_STA) < 0)
+		{
+			printf("\n\rERROR: Wifi on failed!");
+			return;
+		}
+	}
+
+	if(assoc_by_bssid){
+		printf("\n\rJoining BSS by BSSID "MAC_FMT" ...\n\r", MAC_ARG(wifi.bssid.octet));
+		ret = wifi_connect_bssid(wifi.bssid.octet, (char*)wifi.ssid.val, wifi.security_type, (char*)wifi.password,
+						ETH_ALEN, wifi.ssid.len, wifi.password_len, wifi.key_id, NULL);
+	} else {
+		printf("\n\rJoining BSS by SSID %s...\n\r", (char*)wifi.ssid.val);
+		ret = wifi_connect((char*)wifi.ssid.val, wifi.security_type, (char*)wifi.password, wifi.ssid.len,
+						wifi.password_len, wifi.key_id, NULL);
+	}
+
+	if(ret != RTW_SUCCESS){
+		gWiFiStatus = ret;
+	}
+	else
+	{
+		gWiFiStatus = RTW_SUCCESS;
+	}
+
+	wlan_callback_handler();
+
+	/* Start DHCPClient */
+	LwIP_DHCP(0, 0/*DHCP_START*/);
+}
 
 void xs_wifi_destructor(void *data)
 {
@@ -309,38 +393,33 @@ void xs_wifi_close(xsMachine *the)
 
 void xs_wifi_set_onNotify(xsMachine *the)
 {
-#if 0
-    xsWiFi wifi = xsmcGetHostData(xsThis);
-    //uint32_t deviceId = qca4020_wlan_get_active_device();
+	xsWiFi wifi = xsmcGetHostData(xsThis);
 
-    if (NULL == wifi) {
-        wifi = c_calloc(1, sizeof(xsWiFiRecord));
-        if (!wifi)
-            xsUnknownError("out of memory");
-        xsmcSetHostData(xsThis, wifi);
-        wifi->the = the;
-        wifi->obj = xsThis;
-    }
-    else if (wifi->haveCallback) {
-        xsmcDelete(xsThis, xsID_callback);
-        wifi->haveCallback = false;
-        xsForget(wifi->obj);
-    }
+	if (NULL == wifi) {
+		wifi = c_calloc(1, sizeof(xsWiFiRecord));
+		if (!wifi)
+			xsUnknownError("out of memory");
+		xsmcSetHostData(xsThis, wifi);
+		wifi->the = the;
+		wifi->obj = xsThis;
+	}
+	else if (wifi->haveCallback) {
+		xsmcDelete(xsThis, xsID_callback);
+		wifi->haveCallback = FALSE;
+		xsForget(wifi->obj);
+	}
 
-    if (!xsmcTest(xsArg(0)))
-        return;
+	if (!xsmcTest(xsArg(0)))
+		return;
 
-    wifi->haveCallback = true;
+	wifi->haveCallback = TRUE;
 
-    xsRemember(wifi->obj);
+	xsRemember(wifi->obj);
 
-    wifi->next = gWiFi;
-    gWiFi = wifi;
+	wifi->next = gWiFi;
+	gWiFi = wifi;
 
-    xsmcSet(xsThis, xsID_callback, xsArg(0));
-#else
-    printf("%s, need to implement\n",__FUNCTION__);
-#endif
+	xsmcSet(xsThis, xsID_callback, xsArg(0));
 }
 
 void initWiFi(void)
