@@ -60,9 +60,9 @@ C_FLAGS += -DDM_ODM_SUPPORT_TYPE=32
 
 # avoid warning, need to check
 C_FLAGS += -Wno-missing-field-initializers
-C_FLAGS += -DESP32=0
-C_FLAGS += -DMOD_TASKS=0
-C_FLAGS += -D__LP64__=0
+#C_FLAGS += -DESP32=0
+#C_FLAGS += -DMOD_TASKS=0
+#C_FLAGS += -D__LP64__=0
 
 
 #ifeq ($(DEBUG),1)
@@ -239,7 +239,7 @@ C_DEFINES = \
 #	C_DEFINES += -DDEBUG=1 -DmxDebug=1
 #	C_FLAGS += $(HW_DEBUG_OPT)
 #else
-	C_FLAGS += $(HW_OPT) -DmxDebug=0
+	C_FLAGS += $(HW_OPT)
 #endif
 ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
