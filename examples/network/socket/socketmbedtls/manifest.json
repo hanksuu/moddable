@@ -11,6 +11,14 @@
 	},
 	"platforms": {
 		"esp32": {
+			"modules": {
+				"*": "$(MODDABLE)/modules/network/socketmbedtls/esp32/*"
+			}
+		},
+		"ambd": {
+			"modules": {
+				"*": "$(MODDABLE)/modules/network/socketmbedtls/ambd/*"
+			}
 		},
 		"...": {
 			"error": "mbedtls module unsupported"

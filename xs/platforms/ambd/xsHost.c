@@ -2,22 +2,22 @@
  * Copyright (c) 2016-2019  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
- * 
+ *
  *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
- * 
+ *
  *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Lesser General Public License for more details.
- * 
+ *
  *   You should have received a copy of the GNU Lesser General Public License
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
- * This file incorporates work covered by the following copyright and  
- * permission notice:  
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
  *
  *       Copyright (C) 2010-2016 Marvell International Ltd.
  *       Copyright (C) 2002-2010 Kinoma, Inc.
@@ -43,6 +43,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
+
+#include "rtc_api.h"
+#include "wait_api.h"
 
 #include <stdio.h>
 
@@ -97,9 +100,8 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 /*
 	settimeofday, daylightsavingstime
  */
-static int32_t gTimeZoneOffset = -8 * 60 * 60;      // Menlo Park
-static int16_t gDaylightSavings = 60 * 60;          // summer time
-static uint8_t gRTCSet = 0;
+static int32_t gTimeZoneOffset = 8 * 60 * 60;      // Taipei
+static int16_t gDaylightSavings = 0;               // summer time
 
 static modTm gTM;		//@@ eliminate with _r calls
 
@@ -159,81 +161,36 @@ struct modTm *modLocalTime(const modTime_t *timep)
 	return modGmTime(&t);
 }
 
-// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_15
 modTime_t modMkTime(struct modTm *tm)
 {
 	modTime_t t;
-	
-	t =	tm->tm_sec
-		+ (tm->tm_min * 60)
-		+ (tm->tm_hour * 3600)
-		+ (tm->tm_yday * 86400)
-		+ ((tm->tm_year-70) * 31536000)
-		+ (((tm->tm_year-69)/4) * 86400)
-		- (((tm->tm_year-1)/100) * 86400)
-		+ (((tm->tm_year+299)/400)*86400)
-		- (gTimeZoneOffset + gDaylightSavings);
+    t = rtc_read() - (gTimeZoneOffset + gDaylightSavings);
 
 	return t;
 }
 
 void modGetTimeOfDay(struct modTimeVal *tv, struct modTimeZone *tz)
 {
-	#if 0
-	qapi_Time_t tm;
-	modTime_t theTime;
-	modTm mt;
+	time_t seconds;
+	struct tm *timeinfo;
 
-	if (!gRTCSet) {
-		modSetTime(0);
-		gRTCSet = 1;
-	}
-	qapi_Core_RTC_Get(&tm);
-
-	mt.tm_sec = tm.second;
-	mt.tm_min = tm.minute;
-	mt.tm_hour = tm.hour;
-	mt.tm_year = tm.year - 1900;
-	mt.tm_mon = tm.month - 1;
-	mt.tm_mday = tm.day - 1;
-	mt.tm_yday = getDOY(tm.year, tm.month - 1, tm.day - 1);
-	mt.tm_isdst = 0;
-	theTime = modMkTime(&mt);
+	seconds = rtc_read();
+	timeinfo = localtime(&seconds);
 
 	if (tv) {
-		tv->tv_sec = theTime;
+		tv->tv_sec = seconds;
 		tv->tv_usec = 0;
 	}
 	if (tz) {
 		tz->tz_minuteswest = gTimeZoneOffset;
 		tz->tz_dsttime = gDaylightSavings;
 	}
-	#else
-		printf("modGetTimeOfDay : need implement\n");
-	#endif
 }
 
 void modSetTime(uint32_t seconds)
 {
-	#if 0
-	struct modTm *modT;
-	qapi_Time_t qT;
-	modTime_t t;
-
-	t = seconds;
-	modT = modGmTime(&t);
-	qT.year = modT->tm_year + 1900;
-	qT.month = modT->tm_mon + 1;
-	qT.day = modT->tm_mday;
-	qT.hour = modT->tm_hour;
-	qT.minute = modT->tm_min;
-	qT.second = modT->tm_sec;
-	qT.day_Of_Week = (0 == modT->tm_wday ? 6 : modT->tm_wday - 1);
-	qapi_Core_RTC_Set(&qT);
-	gRTCSet = 1;
-	#else
-		printf("modSetTime : need implement\n");
-	#endif
+	rtc_init();
+	rtc_write(seconds);
 }
 
 void modSetTimeZone(int32_t timeZoneOffset)
@@ -561,14 +518,14 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 // 		return fxNewNameC(the, path);
 // 	}
 // #endif
-// 
+//
 	if (!c_strncmp(name, "/", 1)) {
 		absolute = 1;
-	}	
+	}
 	else if (!c_strncmp(name, "./", 2)) {
 		dot = 1;
 		relative = 1;
-	}	
+	}
 	else if (!c_strncmp(name, "../", 3)) {
 		dot = 2;
 		relative = 1;
@@ -663,7 +620,7 @@ void fxLoadModule(txMachine* the, txSlot* realm, txID moduleID)
 		c--;
 		script++;
 	}
-	
+
 #if 0
 	path -= preparation->baseLength;
 	if (!c_strncmp(path, "xsbug://", 8))
@@ -892,7 +849,7 @@ int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, v
 {
 	modMessageRecord msg;
 	portBASE_TYPE ignore;
-	
+
 	msg.message = NULL;
 	msg.length = 0;
 	msg.callback = callback;
@@ -938,7 +895,7 @@ void modMachineTaskUninit(xsMachine *the)
 {
 	if (the->msgQueue) {
 		modMessageRecord msg;
-		
+
 		while (xQueueReceive(the->msgQueue, &msg, 0)) {
 			if (msg.message)
 				c_free(msg.message);

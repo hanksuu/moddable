@@ -34,7 +34,7 @@
 #define WLAN0_NAME		"wlan0"
 #define WLAN1_NAME		"wlan1"
 
-struct netif xnetif[2];
+extern struct netif xnetif[NET_IF_NUM];
 
 void twoHex(uint8_t value, char *out)
 {

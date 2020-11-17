@@ -220,6 +220,9 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 #include <stdio.h>
 #include <stdlib.h>
 
+#define true TRUE
+#define false FALSE
+
 #define C_EOF EOF
 #define C_NULL NULL
 

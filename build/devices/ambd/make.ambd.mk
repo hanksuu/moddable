@@ -132,7 +132,10 @@ INC_DIRS = \
 	$(SDK_BASE)/component/common/network/lwip/lwip_v2.0.2/src/include \
 	$(SDK_BASE)/component/common/network/lwip/lwip_v2.0.2/src/include/lwip \
 	$(SDK_BASE)/component/common/network/lwip/lwip_v2.0.2/port/realtek \
-	$(SDK_BASE)/component/common/network
+	$(SDK_BASE)/component/common/network \
+	$(SDK_BASE)/component/common/mbed/hal \
+	$(SDK_BASE)/component/common/mbed/targets/hal/rtl8721d \
+	$(SDK_BASE)/component/common/mbed/api
 
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \

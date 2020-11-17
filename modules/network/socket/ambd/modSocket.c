@@ -716,7 +716,10 @@ void xs_socket_write(xsMachine *the)
 			tcp_output_safe(xss->skt);
 			available = tcp_sndbuf(xss->skt);
 			if (needed > available)
-				xsUnknownError("can't write all data");
+			{
+				//xsUnknownError("can't write all data");
+				xsTrace("can't write all data ");
+			}
 		}
 	}
 
