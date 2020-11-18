@@ -346,8 +346,6 @@ void xs_wifi_connect(xsMachine *the)
 		gWiFiStatus = RTW_SUCCESS;
 	}
 
-	wlan_callback_handler();
-
 	/* Start DHCPClient */
 	LwIP_DHCP(0, 0/*DHCP_START*/);
 }
@@ -394,7 +392,6 @@ void xs_wifi_close(xsMachine *the)
 void xs_wifi_set_onNotify(xsMachine *the)
 {
 	xsWiFi wifi = xsmcGetHostData(xsThis);
-
 	if (NULL == wifi) {
 		wifi = c_calloc(1, sizeof(xsWiFiRecord));
 		if (!wifi)
@@ -420,6 +417,8 @@ void xs_wifi_set_onNotify(xsMachine *the)
 	gWiFi = wifi;
 
 	xsmcSet(xsThis, xsID_callback, xsArg(0));
+
+	wlan_callback_handler();
 }
 
 void initWiFi(void)

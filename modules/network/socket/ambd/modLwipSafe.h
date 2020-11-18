@@ -23,7 +23,9 @@
 
 #include "xsHost.h"
 
-#if !ESP32
+#define LWIPSAFE 1
+
+#if !LWIPSAFE
 	#define tcp_new_safe tcp_new
 	#define tcp_bind_safe tcp_bind
 	#define tcp_listen_safe tcp_listen

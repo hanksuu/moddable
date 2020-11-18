@@ -20,7 +20,7 @@
 
 #include "modLwipSafe.h"
 
-#if 0//ESP32
+#if LWIPSAFE
 
 #include "lwip/priv/tcpip_priv.h"
 
