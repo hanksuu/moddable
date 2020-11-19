@@ -27,6 +27,28 @@
 #include "wifi_conf.h"
 #include "wlan_intf.h"
 #include "wifi_constants.h"
+#include "lwip_netconf.h"
+#include <wifi/wifi_conf.h>
+#include <wifi/wifi_util.h>
+
+
+/*NETMASK*/
+#ifndef NETMASK_ADDR0
+#define NETMASK_ADDR0   255
+#define NETMASK_ADDR1   255
+#define NETMASK_ADDR2   255
+#define NETMASK_ADDR3   0
+#endif
+
+/*Gateway Address*/
+#ifndef GW_ADDR0
+#define GW_ADDR0   192
+#define GW_ADDR1   168
+#define GW_ADDR2   1
+#define GW_ADDR3   1
+#endif
+
+extern struct netif xnetif[NET_IF_NUM];
 
 static int gMode = 0;
 static void initWiFi(void);
@@ -430,88 +452,83 @@ void initWiFi(void)
 
 void xs_wifi_accessPoint(xsMachine *the)
 {
-#if 0
-    wifi_mode_t mode;
-    wifi_config_t config;
-    wifi_ap_config_t *ap;
-    tcpip_adapter_ip_info_t info;
     char *str;
-    uint8_t station = 0;
+    int timeout = 20;
+    int ret = RTW_SUCCESS;
+    struct ip_addr ipaddr;
+    struct ip_addr netmask;
+    struct ip_addr gw;
+    struct netif * pnetif = &xnetif[0];
 
     initWiFi();
-
-    c_memset(&config, 0, sizeof(config));
-    ap = &config.ap;
+    init_wifi_struct();
 
     xsmcVars(2);
 
     xsmcGet(xsVar(0), xsArg(0), xsID_ssid);
     str = xsmcToString(xsVar(0));
-    ap->ssid_len = c_strlen(str);
-    if (ap->ssid_len > (sizeof(ap->ssid) - 1))
-        xsUnknownError("ssid too long - 32 bytes max");
-    c_memcpy(ap->ssid, str, ap->ssid_len);
+    ap.ssid.len = c_strlen(str);
+    if (ap.ssid.len > 32)
+       xsUnknownError("ssid too long - 32 bytes max");
+    c_strcpy(ap.ssid.val, str);
 
-    ap->authmode = WIFI_AUTH_OPEN;
+    ap.security_type = RTW_SECURITY_OPEN;
     if (xsmcHas(xsArg(0), xsID_password)) {
         xsmcGet(xsVar(0), xsArg(0), xsID_password);
         str = xsmcToString(xsVar(0));
-        if (c_strlen(str) > (sizeof(ap->password) - 1))
+        ap.password_len = c_strlen(str);
+        if (c_strlen(str) > 64)
             xsUnknownError("password too long - 64 bytes max");
         if (c_strlen(str) < 8)
             xsUnknownError("password too short - 8 bytes min");
         if (!c_isEmpty(str)) {
-            c_memcpy(ap->password, str, c_strlen(str));
-            ap->authmode = WIFI_AUTH_WPA_WPA2_PSK;
+            c_strcpy(password, str);
+            ap.password = password;
+            ap.security_type = RTW_SECURITY_WPA2_AES_PSK;
         }
     }
 
-    ap->channel = 1;
+    ap.channel = 1;
     if (xsmcHas(xsArg(0), xsID_channel)) {
         xsmcGet(xsVar(0), xsArg(0), xsID_channel);
-        ap->channel = xsmcToInteger(xsVar(0));
-        if ((ap->channel < 1) || (ap->channel > 13))
+        ap.channel = xsmcToInteger(xsVar(0));
+        if ((ap.channel < 1) || (ap.channel > 13))
             xsUnknownError("invalid channel");
     }
 
-    ap->ssid_hidden = 0;
-    if (xsmcHas(xsArg(0), xsID_hidden)) {
-        xsmcGet(xsVar(0), xsArg(0), xsID_hidden);
-        ap->ssid_hidden = xsmcTest(xsVar(0));
+    dhcps_deinit();
+    IP4_ADDR(ip_2_ip4(&ipaddr), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+    IP4_ADDR(ip_2_ip4(&netmask), NETMASK_ADDR0, NETMASK_ADDR1 , NETMASK_ADDR2, NETMASK_ADDR3);
+    IP4_ADDR(ip_2_ip4(&gw), GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
+    netif_set_addr(pnetif, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask),ip_2_ip4(&gw));
+
+    wifi_off();
+    vTaskDelay(20);
+    if (wifi_on(RTW_MODE_AP) < 0){
+        xsUnknownError("wifi_on failed");
     }
 
-    ap->max_connection = 4;
-    if (xsmcHas(xsArg(0), xsID_max)) {
-        xsmcGet(xsVar(0), xsArg(0), xsID_max);
-        ap->max_connection = xsmcToInteger(xsVar(0));
+    if((ret = wifi_start_ap((char*)ap.ssid.val, ap.security_type, (char*)ap.password, ap.ssid.len, ap.password_len, ap.channel) )< 0) {
+        xsUnknownError("wifi_start_ap failed");
     }
 
-    ap->beacon_interval = 100;
-    if (xsmcHas(xsArg(0), xsID_interval)) {
-        xsmcGet(xsVar(0), xsArg(0), xsID_interval);
-        ap->beacon_interval = xsmcToInteger(xsVar(0));
-    }
+    while(1) {
+        char essid[33];
+        if(wext_get_ssid(WLAN0_NAME, (unsigned char *) essid) > 0) {
+            if(strcmp((const char *) essid, (const char *)ap.ssid.val) == 0) {
+                printf("%s started\n", ap.ssid.val);
+                break;
+            }
+        }
 
-    if (xsmcHas(xsArg(0), xsID_station)) {
-        xsmcGet(xsVar(0), xsArg(0), xsID_station);
-        station = xsmcToBoolean(xsVar(0));
-    }
+        if(timeout == 0) {
+            xsUnknownError("ERROR: Start AP timeout!\n");
+            break;
+        }
 
-    esp_wifi_get_mode(&mode);
-    if ((WIFI_MODE_AP != mode) && (WIFI_MODE_APSTA != mode)) {
-        if (ESP_OK != esp_wifi_set_mode(station ? WIFI_MODE_APSTA : WIFI_MODE_AP))
-            xsUnknownError("esp_wifi_set_mode failed");
+        vTaskDelay(1 * 1000/*configTICK_RATE_HZ*/);
+        timeout --;
     }
+    dhcps_init(pnetif);
 
-    if (ESP_OK != esp_wifi_set_config(ESP_IF_WIFI_AP, &config))
-        xsUnknownError("esp_wifi_set_config failed");
-    if (ESP_OK != esp_wifi_start())
-        xsUnknownError("esp_wifi_start failed");
-    if (ESP_OK != tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &info))
-        xsUnknownError("tcpip_adapter_get_ip_info failed");
-    if (0 == info.ip.addr)
-        xsUnknownError("IP config bad when starting Wi-Fi AP!");
-#else
-    printf("%s, need to implement\n",__FUNCTION__);
-#endif
 }
