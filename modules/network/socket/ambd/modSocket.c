@@ -32,6 +32,7 @@
 
 #include "modSocket.h"
 #include "modLwipSafe.h"
+#include <lwip_netconf.h>
 
 #ifndef MODDEF_SOCKET_READQUEUE
 	#define MODDEF_SOCKET_READQUEUE (6)
@@ -318,17 +319,13 @@ void xs_socket(xsMachine *the)
 
 		if (ttl) {
 			ip_addr_t ifaddr;
-/*
-	#if ESP32
-			tcpip_adapter_ip_info_t info;
-			tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &info);
-			ifaddr.u_addr.ip4 = info.ip;
-	#else
-			struct ip_info staIpInfo;
-			wifi_get_ip_info(0, &staIpInfo);		// 0 == STATION_IF
-			ifaddr.addr = staIpInfo.ip.addr;
-	#endif
-*/
+			extern struct netif xnetif[NET_IF_NUM];
+			char addrStr[40];
+			u8 *ip = LwIP_GetIP(&xnetif[0]);
+
+			ipaddr_ntoa_r(ip, addrStr, sizeof(addrStr));
+			ipaddr_aton(addrStr, &ifaddr);
+
 			igmp_joingroup(&ifaddr, &multicastIP);
 			(xss->udp)->multicast_ip = multicastIP;
 			xss->udp->ttl = 1;
@@ -662,12 +659,12 @@ void xs_socket_write(xsMachine *the)
 			if (0 == pass)
 				needed += msgLen;
 			else {
-
 //#if !ESP32
 //				uint8_t inFlash = (void *)msg >= (void *)kFlashStart;
 //#else
-				uint8_t inFlash = 0;
+//				uint8_t inFlash = 0;
 //#endif
+				uint8_t inFlash = 1;
 
 				if (!inFlash) {
 					while (msgLen) {
