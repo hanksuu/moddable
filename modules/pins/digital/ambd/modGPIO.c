@@ -31,11 +31,16 @@
 
 int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint32_t mode)
 {
+	int result;
 	gpio_t gpio;
+	gpio_init(&gpio, pin);
 
 	config->pin = pin;
-
-	gpio_init(&gpio, pin);
+	result = modGPIOSetMode(config, mode);
+	if (result) {
+		config->pin = kUninitializedPin;
+		return result;
+	}
 
 	return 0;
 }
