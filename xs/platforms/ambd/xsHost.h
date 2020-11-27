@@ -369,14 +369,11 @@ extern void *my_malloc(size_t size);
 #define C_EINVAL EINVAL
 
 /* READ MEMORY */
-
-#define espRead8(POINTER) *((txU1*)POINTER)
-
 #define c_read8(POINTER) *((txU1*)(POINTER))
 #define c_read16(POINTER) *((txU2*)(POINTER))
-#define c_read16be(POINTER) ((((txU2)((txU1*)POINTER)[0]) << 8) | ((txU2)((txU1*)POINTER)[1]))
+#define c_read16be(POINTER) ((((txU2)((txU1*)(POINTER))[0]) << 8) | ((txU2)((txU1*)(POINTER))[1]))
 #define c_read32(POINTER) *((txU4*)(POINTER))
-#define c_read32be(POINTER) ((((txU4)((txU1*)POINTER)[0]) << 24) | (((txU4)((txU1*)POINTER)[1]) << 16) | (((txU4)((txU1*)POINTER)[2]) << 8) | ((txU4)((txU1*)POINTER)[3]))
+#define c_read32be(POINTER) ((((txU4)((txU1*)(POINTER))[0]) << 24) | (((txU4)((txU1*)(POINTER))[1]) << 16) | (((txU4)((txU1*)(POINTER))[2]) << 8) | ((txU4)((txU1*)(POINTER))[3]))
 
 #ifdef __cplusplus
 }

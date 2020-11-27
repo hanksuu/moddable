@@ -2,17 +2,17 @@
  * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
- * 
+ *
  *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
- * 
+ *
  *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Lesser General Public License for more details.
- * 
+ *
  *   You should have received a copy of the GNU Lesser General Public License
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -42,7 +42,7 @@
 		~/esp32/xtensa-esp32-elf/bin/xtensa-esp32-elf-objcopy --input binary --binary-architecture xtensa --output elf32-xtensa-le server_root_cert.pem server_root_cert.pem.o
 
 	Notes:
-	
+
 		Could make size of read and write buffers configurable in dictionary
 */
 
@@ -298,7 +298,7 @@ void xs_socketmbedtls_read(xsMachine *the)
 		else
 		if (xsStringType == limiterType) {
 			char *str = xsmcToString(xsArg(1));
-			char terminator = espRead8(str);
+			char terminator = c_read8(str);
 			if (terminator) {
 				unsigned char *t = strchr(srcData, terminator);
 				if (t) {

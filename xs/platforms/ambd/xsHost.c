@@ -142,7 +142,7 @@ struct modTm *modGmTime(const modTime_t *timep)
 	t -= days;
 	gTM.tm_yday = t;
 	for (gTM.tm_mon = 0; gTM.tm_mon < 12; gTM.tm_mon++) {
-		uint8_t daysInMonth = espRead8(gDaysInMonth + gTM.tm_mon);
+		uint8_t daysInMonth = c_read8(gDaysInMonth + gTM.tm_mon);
 		if ((1 == gTM.tm_mon) && isLeapYear(gTM.tm_year))
 			daysInMonth = 29;
 		if (t < daysInMonth)

@@ -445,9 +445,9 @@ void xs_wifi_set_onNotify(xsMachine *the)
 
 void initWiFi(void)
 {
+    //done in main.c -> wlan_network()
     //LwIP_Init();
     //wifi_on(RTW_MODE_STA);
-    //printf("%s \n",__FUNCTION__);
 }
 
 void xs_wifi_accessPoint(xsMachine *the)
