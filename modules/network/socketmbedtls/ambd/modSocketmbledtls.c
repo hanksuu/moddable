@@ -226,7 +226,7 @@ void xs_socketmbedtls(xsMachine *the)
 
 	mbedtls_ssl_set_bio(&xss->ssl, &xss->server_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
-	mbedtls_net_set_nonblock(&xss->server_fd);
+	//mbedtls_net_set_nonblock(&xss->server_fd);
 
 	xss->timer = modTimerAdd(0, 5, socketStateMachine, &xss, sizeof(xss));
 }
