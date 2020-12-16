@@ -58,6 +58,8 @@ C_FLAGS += -DCONFIG_USE_MBEDTLS_ROM_ALG
 C_FLAGS += -DCONFIG_FUNCION_O0_OPTIMIZE
 C_FLAGS += -DDM_ODM_SUPPORT_TYPE=32
 
+C_FLAGS += -Dambd=1
+
 # avoid warning, need to check
 C_FLAGS += -Wno-missing-field-initializers
 #C_FLAGS += -DESP32=0

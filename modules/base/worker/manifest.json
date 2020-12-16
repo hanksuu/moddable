@@ -21,7 +21,7 @@
 		},
 		"ambd": {
 			"modules": {
-				"*": "$(MODULES)/base/worker/modWorker",
+				"*": "$(MODULES)/base/worker/modWorker"
 			}
 		},
 		"lin": {
