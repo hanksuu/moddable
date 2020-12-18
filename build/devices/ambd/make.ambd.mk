@@ -118,6 +118,7 @@ INC_DIRS = \
 	$(SDK_BASE)/component/os/freertos/freertos_v10.2.0/Source/include \
 	$(SDK_BASE)/component/os/freertos/freertos_v10.2.0/Source/portable/GCC/RTL8721D_HP/non_secure \
 	$(SDK_BASE)/component/os/freertos/freertos_v10.2.0/Source/portable/GCC/RTL8721D_HP/secure \
+	$(SDK_BASE)/component/os/os_dep/include \
 	$(SDK_BASE)/component/soc/realtek/amebad/cmsis \
 	$(SDK_BASE)/component/soc/realtek/amebad/cmsis/device \
 	$(SDK_BASE)/component/soc/realtek/amebad/cmsis-dsp/Source \
@@ -137,7 +138,8 @@ INC_DIRS = \
 	$(SDK_BASE)/component/common/network \
 	$(SDK_BASE)/component/common/mbed/hal \
 	$(SDK_BASE)/component/common/mbed/targets/hal/rtl8721d \
-	$(SDK_BASE)/component/common/mbed/api
+	$(SDK_BASE)/component/common/mbed/api \
+	$(SDK_BASE)/component/common/file_system/dct
 
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \
