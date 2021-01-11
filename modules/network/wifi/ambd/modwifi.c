@@ -263,7 +263,7 @@ static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t
 	}
 
 	xsBeginHost(the);
-		xsCall1(wifi->obj, xsID_callback, xsString(msg));
+	xsCall1(wifi->obj, xsID_callback, xsString(msg));
 	xsEndHost(the);
 }
 
@@ -360,6 +360,9 @@ void xs_wifi_connect(xsMachine *the)
 						wifi.password_len, wifi.key_id, NULL);
 	}
 
+	/* Start DHCPClient */
+	LwIP_DHCP(0, 0/*DHCP_START*/);
+
 	if(ret != RTW_SUCCESS){
 		gWiFiStatus = ret;
 	}
@@ -368,8 +371,6 @@ void xs_wifi_connect(xsMachine *the)
 		gWiFiStatus = RTW_SUCCESS;
 	}
 
-	/* Start DHCPClient */
-	LwIP_DHCP(0, 0/*DHCP_START*/);
 }
 
 void xs_wifi_destructor(void *data)

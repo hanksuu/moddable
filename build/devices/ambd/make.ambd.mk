@@ -139,7 +139,17 @@ INC_DIRS = \
 	$(SDK_BASE)/component/common/mbed/hal \
 	$(SDK_BASE)/component/common/mbed/targets/hal/rtl8721d \
 	$(SDK_BASE)/component/common/mbed/api \
-	$(SDK_BASE)/component/common/file_system/dct
+	$(SDK_BASE)/component/common/file_system/dct \
+	$(SDK_BASE)/component/common/bluetooth/realtek/sdk/inc/platform \
+	$(SDK_BASE)/component/common/bluetooth/realtek/sdk/inc/bluetooth/gap \
+	$(SDK_BASE)/component/common/bluetooth/realtek/sdk/inc/bluetooth/profile \
+	$(SDK_BASE)/component/common/bluetooth/realtek/sdk/board/amebad/lib \
+	$(SDK_BASE)/component/common/bluetooth/realtek/sdk/board/common/inc \
+	$(SDK_BASE)/component/common/bluetooth/realtek/sdk/inc/stack \
+	$(SDK_BASE)/component/common/bluetooth/realtek/sdk/inc/os \
+	$(SDK_BASE)/component/common/bluetooth/realtek/sdk/inc/bluetooth/profile/server \
+	$(SDK_BASE)/component/common/bluetooth/realtek/sdk/board/amebad/src \
+	$(SDK_BASE)/component/common/bluetooth/realtek/sdk/inc/app
 
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \

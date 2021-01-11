@@ -72,14 +72,18 @@ export default class WiFiServer extends BLEServer {
 			switch (msg) {
 				case WiFi.connected:
 					this.doStatusNotification(`Wi-Fi connected. Waiting for IP addreess...`);
-					break;
-				case WiFi.gotIP:
-					this.doStatusNotification(`IP address: ${Net.get("IP")}`);
 					Timer.set(() => {
 						this.doStatusNotification(`BLE disconnecting.`);
 						this.disconnect();
-					}, 500);
+					}, 1000);
 					break;
+				//case WiFi.gotIP:
+				//	this.doStatusNotification(`IP address: ${Net.get("IP")}`);
+				//	Timer.set(() => {
+				//		this.doStatusNotification(`BLE disconnecting.`);
+				//		this.disconnect();
+				//	}, 500);
+				//	break;
 				case WiFi.disconnected:
 					this.doStatusNotification(`Wi-Fi disconnected`);
 					break;
