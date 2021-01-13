@@ -34,9 +34,9 @@ export default function (done) {
 
 	let monitor = new WiFi({ssid: config.ssid, password: config.password}, function(msg) {
 	   switch (msg) {
-			case "connect":
-				trace(`Wi-Fi connected to "${Net.get("SSID")}"\n`);
+			case "gotIP":
 				trace(`IP address ${Net.get("IP")}\n`);
+
 				monitor = monitor.close();
 				if (!config.sntp)
 					return done();
@@ -53,7 +53,8 @@ export default function (done) {
 					done();
 				});
 				break;
-
+			case "connect":
+				trace(`Wi-Fi connected to "${Net.get("SSID")}"\n`);
 			case "disconnect":
 				trace("Wi-Fi disconnected\n");
 				break;

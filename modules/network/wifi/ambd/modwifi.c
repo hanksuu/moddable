@@ -58,6 +58,15 @@ static rtw_ap_info_t ap = {0};
 static unsigned char password[65] = {0};
 static int mode = 0;
 static int gWiFiStatus = -1;
+static int gDisconnectReason = 0;
+
+enum {
+	STATION_CONNECTED = 0,
+	STATION_WRONG_PASSWORD,
+	STATION_DISCONNECTED,
+	STATION_GOT_IP
+};
+
 
 struct wifiScanRecord {
     xsSlot          callback;
@@ -254,16 +263,29 @@ static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t
 	const char *msg;
 
 	switch (gWiFiStatus) {
-		case RTW_SUCCESS:
+		case STATION_CONNECTED:
 			msg = "connect";
 			break;
-		default:
+		case STATION_GOT_IP:
+			msg = "gotIP";
+			break;
+		case STATION_DISCONNECTED:
 			msg = "disconnect";
 			break;
+		default:
+			return;
 	}
 
 	xsBeginHost(the);
-	xsCall1(wifi->obj, xsID_callback, xsString(msg));
+	if (STATION_DISCONNECTED != gWiFiStatus)
+	{
+		xsCall1(wifi->obj, xsID_callback, xsString(msg));
+	}
+	else
+	{
+		xsmcSetInteger(xsResult, gDisconnectReason);
+		xsCall2(wifi->obj, xsID_callback, xsString(msg), xsResult);
+	}
 	xsEndHost(the);
 }
 
@@ -360,15 +382,16 @@ void xs_wifi_connect(xsMachine *the)
 						wifi.password_len, wifi.key_id, NULL);
 	}
 
-	/* Start DHCPClient */
-	LwIP_DHCP(0, 0/*DHCP_START*/);
-
 	if(ret != RTW_SUCCESS){
-		gWiFiStatus = ret;
+		gWiFiStatus = STATION_DISCONNECTED;
+		gDisconnectReason = wifi_get_last_error();
 	}
 	else
 	{
-		gWiFiStatus = RTW_SUCCESS;
+		if(2/*DHCP_ADDRESS_ASSIGNED*/ == LwIP_DHCP(0, 0/*DHCP_START*/))
+		{
+			gWiFiStatus = STATION_GOT_IP;
+		}
 	}
 
 }

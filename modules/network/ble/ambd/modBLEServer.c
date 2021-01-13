@@ -107,7 +107,7 @@ static const char_name_table char_names[4] = {
 #define DEFAULT_ADVERTISING_INTERVAL_MIN            352 //220ms
 #define DEFAULT_ADVERTISING_INTERVAL_MAX            384 //240ms
 
-#define APP_TASK_PRIORITY                           1         //!< Task priorities
+#define APP_TASK_PRIORITY                           2         //!< Task priorities
 #define APP_TASK_STACK_SIZE                         256 * 16   //!< Task stack size
 #define MAX_NUMBER_OF_GAP_MESSAGE                   0x20      //!< GAP message queue size
 #define MAX_NUMBER_OF_IO_MESSAGE                    0x20      //!< IO message queue size
@@ -328,7 +328,7 @@ void xs_ble_server_stop_advertising(xsMachine *the)
 void xs_ble_server_characteristic_notify_value(xsMachine *the)
 {
 #if 1
-	printf("xs_ble_server_characteristic_notify_value unsupport\n");
+	//printf("xs_ble_server_characteristic_notify_value unsupport\n");
 #else
 	uint16_t handle = xsmcToInteger(xsArg(0));
 	uint16_t notify = xsmcToInteger(xsArg(1));
@@ -464,7 +464,7 @@ T_APP_RESULT rtk_ble_service_attr_write_cb(uint8_t conn_id, T_SERVER_ID service_
 	xsBeginHost(gBLE->the);
 
     //printf("rtk_ble_service_attr_write_cb write_type = 0x%x\n", write_type);
-    *p_write_ind_post_proc = rtk_write_post_callback;
+    //*p_write_ind_post_proc = rtk_write_post_callback;
     if (SIMPLE_BLE_SERVICE_CHAR_V2_WRITE_INDEX1 == attrib_index || SIMPLE_BLE_SERVICE_CHAR_V2_WRITE_INDEX2 == attrib_index || SIMPLE_BLE_SERVICE_CHAR_V2_WRITE_INDEX3 == attrib_index)
     {
         /* Make sure written value size is valid. */
@@ -482,45 +482,47 @@ T_APP_RESULT rtk_ble_service_attr_write_cb(uint8_t conn_id, T_SERVER_ID service_
             callback_data.msg_data.write.len = length;
             callback_data.msg_data.write.p_value = p_value;
 
-			if(SIMPLE_BLE_SERVICE_CHAR_V2_WRITE_INDEX1 == attrib_index){
-				handle = 0;
-				buffer[0] = 0x01;
-				buffer[1] = 0xFF;
-			}
-			else if(SIMPLE_BLE_SERVICE_CHAR_V2_WRITE_INDEX2 == attrib_index)
-			{
-				handle = 1;
-				buffer[0] = 0x02;
-				buffer[1] = 0xFF;
-			}
-			else if(SIMPLE_BLE_SERVICE_CHAR_V2_WRITE_INDEX3 == attrib_index)
-			{
-				handle = 2;
-				buffer[0] = 0x03;
-				buffer[1] = 0xFF;
-			}
-			xsmcVars(6);
-			xsVar(0) = xsmcNewObject();
-			xsmcSetArrayBuffer(xsVar(1), buffer, 2);
-			xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
-
-			//if (char_names) {
-				xsmcSetString(xsVar(2), (char*)char_names[handle].name);
-				xsmcSet(xsVar(0), xsID_name, xsVar(2));
-				xsmcSetString(xsVar(3), (char*)char_names[handle].type);
-				xsmcSet(xsVar(0), xsID_type, xsVar(3));
-			//}
-
-			xsmcSetInteger(xsVar(2), handle);
-			xsmcSet(xsVar(0), xsID_handle, xsVar(2));
-			xsmcSetArrayBuffer(xsVar(3), p_value, length);
-			xsmcSet(xsVar(0), xsID_value, xsVar(3));
-			xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicWritten"), xsVar(0));
-
             if (pfn_simp_ble_service_cb)
             {
                 pfn_simp_ble_service_cb(service_id, (void *)&callback_data);
             }
+
+            if(SIMPLE_BLE_SERVICE_CHAR_V2_WRITE_INDEX1 == attrib_index){
+                handle = 0;
+                buffer[0] = 0x01;
+                buffer[1] = 0xFF;
+            }
+            else if(SIMPLE_BLE_SERVICE_CHAR_V2_WRITE_INDEX2 == attrib_index)
+            {
+                handle = 1;
+                buffer[0] = 0x02;
+                buffer[1] = 0xFF;
+            }
+            else if(SIMPLE_BLE_SERVICE_CHAR_V2_WRITE_INDEX3 == attrib_index)
+            {
+                handle = 2;
+                buffer[0] = 0x03;
+                buffer[1] = 0xFF;
+            }
+
+            xsmcVars(6);
+            xsVar(0) = xsmcNewObject();
+            xsmcSetArrayBuffer(xsVar(1), buffer, 2);
+            xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+
+            //if (char_names) {
+                xsmcSetString(xsVar(2), (char*)char_names[handle].name);
+                xsmcSet(xsVar(0), xsID_name, xsVar(2));
+                xsmcSetString(xsVar(3), (char*)char_names[handle].type);
+                xsmcSet(xsVar(0), xsID_type, xsVar(3));
+            //}
+
+            xsmcSetInteger(xsVar(2), handle);
+            xsmcSet(xsVar(0), xsID_handle, xsVar(2));
+            xsmcSetArrayBuffer(xsVar(3), p_value, length);
+            xsmcSet(xsVar(0), xsID_value, xsVar(3));
+            xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicWritten"), xsVar(0));
+
         }
     }
     else
@@ -528,6 +530,7 @@ T_APP_RESULT rtk_ble_service_attr_write_cb(uint8_t conn_id, T_SERVER_ID service_
         printf("rtk_ble_service_attr_write_cb Error: attrib_index 0x%x, length %d\n", attrib_index, length);
         cause = APP_RESULT_ATTR_NOT_FOUND;
     }
+
     xsEndHost(gBLE->the);
     return cause;
 }
