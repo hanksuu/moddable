@@ -108,7 +108,7 @@ static const char_name_table char_names[4] = {
 #define DEFAULT_ADVERTISING_INTERVAL_MAX            384 //240ms
 
 #define APP_TASK_PRIORITY                           2         //!< Task priorities
-#define APP_TASK_STACK_SIZE                         256 * 16   //!< Task stack size
+#define APP_TASK_STACK_SIZE                         256 * 10   //!< Task stack size
 #define MAX_NUMBER_OF_GAP_MESSAGE                   0x20      //!< GAP message queue size
 #define MAX_NUMBER_OF_IO_MESSAGE                    0x20      //!< IO message queue size
 #define MAX_NUMBER_OF_EVENT_MESSAGE                 (MAX_NUMBER_OF_GAP_MESSAGE + MAX_NUMBER_OF_IO_MESSAGE)    //!< Event message queue size
