@@ -19,6 +19,11 @@
 				"*": "$(MODULES)/base/worker/modWorker"
 			}
 		},
+		"ambd": {
+			"modules": {
+				"*": "$(MODULES)/base/worker/modWorker"
+			}
+		},
 		"lin": {
 			"modules": {
 				"*": "$(MODULES)/base/worker/pcWorker"

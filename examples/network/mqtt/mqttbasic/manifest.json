@@ -8,5 +8,8 @@
 		"*": [
 			"./main"
 		]
+	},
+	"config": {
+		"sntp": "pool.ntp.org"
 	}
 }

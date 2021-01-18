@@ -1288,6 +1288,8 @@ export default class extends TOOL {
 						this.platform = "gecko";
 					else if (this.outputPath.includes('tmp/qca4020') || this.outputPath.includes('tmp\\qca4020'))
 						this.platform = "qca4020";
+					else if (this.outputPath.includes('tmp/ambd') || this.outputPath.includes('tmp\\ambd'))
+						this.platform = "ambd";
 					else
 						throw new Error("unknown platform");
 					break;
@@ -1341,6 +1343,8 @@ export default class extends TOOL {
 		else if ("gecko" == this.platform)
 			gatt = new GeckoGATTFile(dictionary);
 		else if ("qca4020" == this.platform)
+			gatt = new QCA4020GATTFile(dictionary);
+		else if ("ambd" == this.platform)
 			gatt = new QCA4020GATTFile(dictionary);
 		gatt.generate();
 		file.close();

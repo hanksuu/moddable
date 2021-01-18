@@ -27,6 +27,11 @@
 				"*": "$(MODULES)/network/wifi/qca4020/*"
 			}
 		},
+		"ambd": {
+			"modules": {
+				"*": "$(MODULES)/network/wifi/ambd/*"
+			}
+		},
 		"...": {
 			"error": "WiFi module unsupported"
 		}

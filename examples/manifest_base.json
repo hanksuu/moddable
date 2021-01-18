@@ -59,6 +59,9 @@
 		"qca4020": {
 			"include": "$(BUILD)/devices/qca4020/manifest.json"
 		},
+		"ambd": {
+			"include": "$(BUILD)/devices/ambd/manifest.json"
+		},		
 		"lin": {
 			"include": "$(BUILD)/simulator/manifest.json"
 		},

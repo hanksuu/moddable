@@ -24,6 +24,11 @@
 				"*": "$(MODULES)/pins/digital/qca4020/*"
 			}
 		},
+		"ambd": {
+			"modules": {
+				"*": "$(MODULES)/pins/digital/ambd/*"
+			}
+		},
 		"...": {
 			"error": "pins/digital module unsupported"
 		}

@@ -1,0 +1,42 @@
+        modified:   .gitignore
+        new file:   build/devices/ambd/base/debugger.c
+        new file:   build/devices/ambd/base/systemclock.c
+        new file:   build/devices/ambd/base/wlan.c
+        new file:   build/devices/ambd/base/xsmain.c
+        new file:   build/devices/ambd/base/xsmain.h
+        new file:   build/devices/ambd/make.ambd.mk
+        new file:   build/devices/ambd/manifest.json
+        new file:   build/devices/ambd/setup/network.js
+        new file:   build/devices/ambd/xsProj/src/main.c
+        modified:   examples/manifest_base.json                                 // add ambd
+        modified:   examples/manifest_net.json                                  // add ambd
+        modified:   examples/network/mqtt/mqttbasic/manifest.json               // add sntp server to get time
+        modified:   examples/network/mqtt/mqttsecure/manifest.json              // add sntp server to get time
+        modified:   examples/network/net/manifest.json                          // add ambd
+        modified:   examples/network/socket/socketmbedtls/manifest.json         // add ambd and move modSocketmbedtls.c to esp32/modSocketmbedtls.c
+        modified:   examples/network/wifi/wifiaccesspoint/manifest.json         // add ambd
+        modified:   examples/network/wifi/wifiscan/manifest.json                // add ambd
+        modified:   examples/network/wifi/wifiscancontinuous/manifest.json      // add ambd
+        modified:   modules/base/worker/manifest.json                           // add ambd
+        modified:   modules/base/worker/modWorker.c                             // add ambd
+        new file:   modules/files/preference/ambd/modPreference.c
+        modified:   modules/files/preference/manifest.json                      // add ambd
+        new file:   modules/network/ble/ambd/modBLEGAP.c
+        new file:   modules/network/ble/ambd/modBLESM.c
+        new file:   modules/network/ble/ambd/modBLEServer.c
+        new file:   modules/network/net/ambd/modNet.c
+        new file:   modules/network/net/ambd/modResolve.c
+        new file:   modules/network/socket/ambd/modLwipSafe.c
+        new file:   modules/network/socket/ambd/modLwipSafe.h
+        new file:   modules/network/socket/ambd/modSocket.c
+        new file:   modules/network/socketmbedtls/ambd/modSocketmbledtls.c
+        renamed:    modules/network/socketmbedtls/modSocketmbledtls.c -> modules/network/socketmbedtls/eps32/modSocketmbledtls.c
+        new file:   modules/network/wifi/ambd/modwifi.c
+        new file:   modules/pins/digital/ambd/modGPIO.c
+        new file:   modules/pins/digital/ambd/modGPIO.h
+        modified:   modules/pins/digital/manifest.json                          // add ambd
+        modified:   tools/bles2gatt.js                                          // add dummy, not support at this time
+        new file:   xs/platforms/ambd/xsHost.c
+        new file:   xs/platforms/ambd/xsHost.h
+        new file:   xs/platforms/ambd/xsPlatform.c
+        new file:   xs/platforms/ambd/xsPlatform.h

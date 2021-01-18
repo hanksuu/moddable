@@ -14,5 +14,8 @@
 		"*": [
 			"./mosquitto.org"
 		]
+	},
+       "config": {
+               "sntp": "pool.ntp.org"
 	}
 }
