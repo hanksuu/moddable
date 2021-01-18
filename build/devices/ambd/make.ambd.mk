@@ -78,9 +78,18 @@ C_FLAGS += -Wno-missing-field-initializers
 #endif
 
 
+LINUX_OS  = Linux
+DARWIN_OS = Darwin
+
 HOST_OS := $(shell uname)
 
-RTK_GCC_ROOT = $(SDK_BASE)/project/realtek_amebaD_va0_example/GCC-RELEASE/project_hp/toolchain/linux/asdk-6.4.1/linux/newlib
+ifeq ($(HOST_OS),$(DARWIN_OS))
+	RTK_GCC_ROOT = $(SDK_BASE)/project/realtek_amebaD_va0_example/GCC-RELEASE/project_hp/toolchain/darwin/asdk-6.5.0-darwin-newlib-build-999+-10.13/darwin/newlib
+	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
+else
+	RTK_GCC_ROOT = $(SDK_BASE)/project/realtek_amebaD_va0_example/GCC-RELEASE/project_hp/toolchain/linux/asdk-6.4.1/linux/newlib
+	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
+endif
 
 INC_DIRS = \
 	$(SDK_BASE)/include \
@@ -230,7 +239,6 @@ AR  = $(TOOLS_BIN)/$(TOOLS_PREFIX)-ar
 
 AR_FLAGS = crs
 
-MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
 BUILDCLUT = $(MODDABLE_TOOLS_DIR)/buildclut
 COMPRESSBMF = $(MODDABLE_TOOLS_DIR)/compressbmf
 RLE4ENCODE = $(MODDABLE_TOOLS_DIR)/rle4encode
