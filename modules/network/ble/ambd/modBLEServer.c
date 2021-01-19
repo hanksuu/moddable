@@ -51,8 +51,8 @@
 #include <gap_conn_le.h>
 #include "platform_stdlib.h"
 #include <profile_server.h>
-#include <ble_peripheral_tmp/moddable_ble_service.c>
-//#include "mc.bleservices.c"
+//#include <ble_peripheral_tmp/moddable_ble_service.c>
+#include "mc.bleservices.c"
 
 /*================= Moddable =================*/
 typedef struct {
@@ -84,22 +84,10 @@ typedef struct {
 } modBLERecord, *modBLE;
 
 static modBLE gBLE = NULL;
+static char_name_table *handleToCharName(uint8_t service_index, uint8_t handle);
 static void addressToBuffer(uint8_t *address, uint8_t *buffer);
 static void bufferToAddress(uint8_t *buffer, uint8_t *address);
 
-typedef struct {
-    uint8_t service_index;
-    uint8_t att_index;
-    const char *name;
-    const char *type;
-} char_name_table;
-
-static const char_name_table char_names[4] = {
-    {0, 0, "SSID", "String"},
-    {0, 1, "password", "String"},
-    {0, 2, "control", "Uint8"},
-    {0, 3, "status", "String"},
-};
 /*================= Moddable end =============*/
 //================= RTK start ============*/
 #define APP_MAX_LINKS                               1
@@ -122,11 +110,11 @@ static const char_name_table char_names[4] = {
 #define SIMP_NOTIFY_INDICATE_V4_DISABLE             4
 #define SIMP_READ_V1_MAX_LEN                        300
 
-#define SIMP_BLE_SERVICE_CHAR_WRITE_SSID_HANDLE       0x02
-#define SIMP_BLE_SERVICE_CHAR_WRITE_PASSWORD_HANDLE   (SIMP_BLE_SERVICE_CHAR_WRITE_SSID_HANDLE + 0x2)
-#define SIMP_BLE_SERVICE_CHAR_WRITE_CONTROL_HANDLE    (SIMP_BLE_SERVICE_CHAR_WRITE_PASSWORD_HANDLE + 0x2)
-#define SIMP_BLE_SERVICE_CHAR_NOTIFY_HANDLE           (SIMP_BLE_SERVICE_CHAR_WRITE_CONTROL_HANDLE + 0x2)
-#define SIMP_BLE_SERVICE_CHAR_NOTIFY_CCCD_HANDLE      (SIMP_BLE_SERVICE_CHAR_NOTIFY_HANDLE + 0x1)
+#define SIMP_BLE_SERVICE0_CHAR0_HANDLE              0x02
+#define SIMP_BLE_SERVICE0_CHAR1_HANDLE              (SIMP_BLE_SERVICE0_CHAR0_HANDLE + 0x2)
+#define SIMP_BLE_SERVICE0_CHAR2_HANDLE              (SIMP_BLE_SERVICE0_CHAR1_HANDLE + 0x2)
+#define SIMP_BLE_SERVICE0_CHAR3_HANDLE              (SIMP_BLE_SERVICE0_CHAR2_HANDLE + 0x2)
+#define SIMP_BLE_SERVICE_CHAR_NOTIFY_CCCD_HANDLE    (SIMP_BLE_SERVICE0_CHAR3_HANDLE + 0x1)
 
 /**<  Value of simple read characteristic. */
 static uint8_t simple_char_read_value[SIMP_READ_V1_MAX_LEN];
@@ -164,8 +152,8 @@ static const uint8_t adv_data[] =
     /* Service */
     0x03,             /* length */
     GAP_ADTYPE_16BIT_COMPLETE,
-    LO_WORD(GATT_UUID_MODD_PROFILE),
-    HI_WORD(GATT_UUID_MODD_PROFILE),
+    LO_WORD(GATT_SERVICE0_UUID),
+    HI_WORD(GATT_SERVICE0_UUID),
     /* Local name */
     0x0F,             /* length */
     GAP_ADTYPE_LOCAL_NAME_COMPLETE,
@@ -362,6 +350,22 @@ void xs_ble_server_deploy(xsMachine *the)
 	printf("xs_ble_server_deploy unsupport\n");
 }
 
+static char_name_table *handleToCharName(uint8_t service_id, uint8_t handle)
+{
+	for (uint16_t i = 0; i < service_count; ++i)
+	{
+		if (rtk_srv_id == service_id)
+		{
+			for (uint16_t k = 0; k < char_name_count; ++k)
+			{
+				if (char_names[k].service_index == i && char_names[k].att_index == handle)
+					return &char_names[k];
+			}
+		}
+	}
+	return NULL;
+}
+
 static void addressToBuffer(uint8_t *address, uint8_t *buffer)
 {
 	buffer[0] = address[5];
@@ -417,8 +421,8 @@ T_APP_RESULT  rtk_ble_service_attr_read_cb(uint8_t conn_id, T_SERVER_ID service_
 {
     (void)offset;
     T_APP_RESULT  cause  = APP_RESULT_SUCCESS;
-    uint16_t handle = 0;
     uint8_t uuid_buffer[2];
+    char_name_table *char_names;
 
     switch (attrib_index)
     {
@@ -426,7 +430,7 @@ T_APP_RESULT  rtk_ble_service_attr_read_cb(uint8_t conn_id, T_SERVER_ID service_
         APP_PRINT_ERROR1("rtk_ble_service_attr_read_cb, Attr not found, index %d", attrib_index);
         cause = APP_RESULT_ATTR_NOT_FOUND;
         break;
-    case SIMP_BLE_SERVICE_CHAR_NOTIFY_HANDLE:
+    case SIMP_BLE_SERVICE0_CHAR3_HANDLE:
         {
             TSIMP_CALLBACK_DATA callback_data;
             callback_data.msg_type = SERVICE_CALLBACK_TYPE_READ_CHAR_VALUE;
@@ -437,22 +441,22 @@ T_APP_RESULT  rtk_ble_service_attr_read_cb(uint8_t conn_id, T_SERVER_ID service_
                 pfn_simp_ble_service_cb(service_id, (void *)&callback_data);
             }
 
-            handle = 3; //status
-            uuid_buffer[0] = 0x04;
-            uuid_buffer[1] = 0xFF;
+            char_names = handleToCharName(service_id,attrib_index);
+            uuid_buffer[0] = LO_WORD(GATT_SERVICE0_CHR3_UUID);
+            uuid_buffer[1] = HI_WORD(GATT_SERVICE0_CHR3_UUID);
 
             xsBeginHost(gBLE->the);
             xsmcVars(5);
 
             xsVar(0) = xsmcNewObject();
             xsmcSetArrayBuffer(xsVar(1), uuid_buffer, 2);
-            xsmcSetInteger(xsVar(2), handle);
+            xsmcSetInteger(xsVar(2), attrib_index);
             xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
             xsmcSet(xsVar(0), xsID_handle, xsVar(2));
 
-            xsmcSetString(xsVar(3), (char*)char_names[handle].name);
+            xsmcSetString(xsVar(3), (char*)char_names->name);
             xsmcSet(xsVar(0), xsID_name, xsVar(3));
-            xsmcSetString(xsVar(4), (char*)char_names[handle].type);
+            xsmcSetString(xsVar(4), (char*)char_names->type);
             xsmcSet(xsVar(0), xsID_type, xsVar(4));
             xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicRead"), xsVar(0));
             if (xsUndefinedType != xsmcTypeOf(xsResult))
@@ -481,17 +485,17 @@ T_APP_RESULT rtk_ble_service_attr_write_cb(uint8_t conn_id, T_SERVER_ID service_
 {
     TSIMP_CALLBACK_DATA callback_data;
     T_APP_RESULT  cause = APP_RESULT_SUCCESS;
-	uint16_t handle = 0;
-	uint8_t uuid_buffer[2];
+    uint8_t uuid_buffer[2];
+    char_name_table *char_names;
 
-	if (!gBLE) return;
-	xsBeginHost(gBLE->the);
+    if (!gBLE) return;
+    xsBeginHost(gBLE->the);
 
     //printf("rtk_ble_service_attr_write_cb write_type = 0x%x\n", write_type);
     //*p_write_ind_post_proc = rtk_write_post_callback;
-    if (SIMP_BLE_SERVICE_CHAR_WRITE_SSID_HANDLE == attrib_index ||
-        SIMP_BLE_SERVICE_CHAR_WRITE_PASSWORD_HANDLE == attrib_index ||
-        SIMP_BLE_SERVICE_CHAR_WRITE_CONTROL_HANDLE == attrib_index)
+    if (SIMP_BLE_SERVICE0_CHAR0_HANDLE == attrib_index ||
+        SIMP_BLE_SERVICE0_CHAR1_HANDLE == attrib_index ||
+        SIMP_BLE_SERVICE0_CHAR2_HANDLE == attrib_index)
     {
         /* Make sure written value size is valid. */
         if (p_value == NULL)
@@ -513,38 +517,38 @@ T_APP_RESULT rtk_ble_service_attr_write_cb(uint8_t conn_id, T_SERVER_ID service_
                 pfn_simp_ble_service_cb(service_id, (void *)&callback_data);
             }
 
-            if(SIMP_BLE_SERVICE_CHAR_WRITE_SSID_HANDLE == attrib_index)
+            if(SIMP_BLE_SERVICE0_CHAR0_HANDLE == attrib_index)
             {
-                handle = 0; // ssid
-                uuid_buffer[0] = 0x01;
-                uuid_buffer[1] = 0xFF;
+                uuid_buffer[0] = LO_WORD(GATT_SERVICE0_CHR0_UUID);
+                uuid_buffer[1] = HI_WORD(GATT_SERVICE0_CHR0_UUID);
             }
-            else if(SIMP_BLE_SERVICE_CHAR_WRITE_PASSWORD_HANDLE == attrib_index)
+            else if(SIMP_BLE_SERVICE0_CHAR1_HANDLE == attrib_index)
             {
-                handle = 1; // password
-                uuid_buffer[0] = 0x02;
-                uuid_buffer[1] = 0xFF;
+                uuid_buffer[0] = LO_WORD(GATT_SERVICE0_CHR1_UUID);
+                uuid_buffer[1] = HI_WORD(GATT_SERVICE0_CHR1_UUID);
+
             }
-            else if(SIMP_BLE_SERVICE_CHAR_WRITE_CONTROL_HANDLE == attrib_index)
+            else if(SIMP_BLE_SERVICE0_CHAR2_HANDLE == attrib_index)
             {
-                handle = 2; // control
-                uuid_buffer[0] = 0x03;
-                uuid_buffer[1] = 0xFF;
+                uuid_buffer[0] = LO_WORD(GATT_SERVICE0_CHR2_UUID);
+                uuid_buffer[1] = HI_WORD(GATT_SERVICE0_CHR2_UUID);
             }
+
+            char_names = handleToCharName(service_id,attrib_index);
 
             xsmcVars(6);
             xsVar(0) = xsmcNewObject();
             xsmcSetArrayBuffer(xsVar(1), uuid_buffer, 2);
             xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 
-            //if (char_names) {
-                xsmcSetString(xsVar(2), (char*)char_names[handle].name);
+            if (char_names) {
+                xsmcSetString(xsVar(2), (char*)char_names->name);
                 xsmcSet(xsVar(0), xsID_name, xsVar(2));
-                xsmcSetString(xsVar(3), (char*)char_names[handle].type);
+                xsmcSetString(xsVar(3), (char*)char_names->type);
                 xsmcSet(xsVar(0), xsID_type, xsVar(3));
-            //}
+            }
 
-            xsmcSetInteger(xsVar(2), handle);
+            xsmcSetInteger(xsVar(2), attrib_index);
             xsmcSet(xsVar(0), xsID_handle, xsVar(2));
             xsmcSetArrayBuffer(xsVar(3), p_value, length);
             xsmcSet(xsVar(0), xsID_value, xsVar(3));
@@ -567,7 +571,7 @@ bool rtk_ble_service_send_v3_notify(uint8_t conn_id, T_SERVER_ID service_id, voi
 {
     APP_PRINT_INFO0("rtk_ble_service_send_v3_notify");
     // send notification to client
-    return server_send_data(conn_id, service_id, SIMP_BLE_SERVICE_CHAR_NOTIFY_HANDLE, p_value,
+    return server_send_data(conn_id, service_id, SIMP_BLE_SERVICE0_CHAR3_HANDLE, p_value,
                             length,
                             GATT_PDU_TYPE_ANY);
 }
@@ -579,9 +583,9 @@ void rtk_ble_service_cccd_update_cb(uint8_t conn_id, T_SERVER_ID service_id, uin
     bool is_handled = false;
     callback_data.conn_id = conn_id;
     callback_data.msg_type = SERVICE_CALLBACK_TYPE_INDIFICATION_NOTIFICATION;
-	uint16_t handle = 0;
 	uint8_t uuid_buffer[2];
 	uint8_t notify = 0xFF;
+	char_name_table *char_names;
 
 	if (!gBLE) return;
 	xsBeginHost(gBLE->the);
@@ -615,28 +619,29 @@ void rtk_ble_service_cccd_update_cb(uint8_t conn_id, T_SERVER_ID service_id, uin
         pfn_simp_ble_service_cb(service_id, (void *)&callback_data);
     }
 
-	handle = 3;//status
-	uuid_buffer[0] = 0x04;
-	uuid_buffer[1] = 0xFF;
+    char_names = handleToCharName(service_id,index-1);
+    uuid_buffer[0] = 0x04;
+    uuid_buffer[1] = 0xFF;
 
-	xsmcVars(6);
-	xsVar(0) = xsmcNewObject();
-	xsmcSetArrayBuffer(xsVar(1), uuid_buffer, 2);
-	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
+    xsmcVars(6);
+    xsVar(0) = xsmcNewObject();
+    xsmcSetArrayBuffer(xsVar(1), uuid_buffer, 2);
+    xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 
-//if (char_names) {
-	xsmcSetString(xsVar(2), (char*)char_names[handle].name);
-	xsmcSet(xsVar(0), xsID_name, xsVar(2));
-	xsmcSetString(xsVar(3), (char*)char_names[handle].type);
-	xsmcSet(xsVar(0), xsID_type, xsVar(3));
-//}
-	xsmcSetInteger(xsVar(4), handle);
-	xsmcSetInteger(xsVar(5), notify);
-	xsmcSet(xsVar(0), xsID_handle, xsVar(4));
-	xsmcSet(xsVar(0), xsID_notify, xsVar(5));
-	xsCall2(gBLE->obj, xsID_callback, xsString(0 == notify ? "onCharacteristicNotifyDisabled" : "onCharacteristicNotifyEnabled"), xsVar(0));
+    if (char_names) {
+        xsmcSetString(xsVar(2), (char*)char_names->name);
+        xsmcSet(xsVar(0), xsID_name, xsVar(2));
+        xsmcSetString(xsVar(3), (char*)char_names->type);
+        xsmcSet(xsVar(0), xsID_type, xsVar(3));
+    }
 
-	xsEndHost(gBLE->the);
+    xsmcSetInteger(xsVar(4), index-1);
+    xsmcSetInteger(xsVar(5), notify);
+    xsmcSet(xsVar(0), xsID_handle, xsVar(4));
+    xsmcSet(xsVar(0), xsID_notify, xsVar(5));
+    xsCall2(gBLE->obj, xsID_callback, xsString(0 == notify ? "onCharacteristicNotifyDisabled" : "onCharacteristicNotifyEnabled"), xsVar(0));
+
+    xsEndHost(gBLE->the);
 }
 
 const T_FUN_GATT_SERVICE_CBS rtk_ble_service_cbs =
