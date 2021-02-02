@@ -47,6 +47,12 @@
 				"setup/piu": "$(BUILD)/devices/qca4020/setup/piu"
 			},
 			"preload": "setup/piu"
+		},
+		"ambd": {
+			"modules": {
+				"setup/piu": "$(BUILD)/devices/ambd/setup/piu"
+			},
+			"preload": "setup/piu"
 		}
 	}
 }

@@ -32,8 +32,8 @@
 int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint32_t mode)
 {
 	int result;
-	gpio_t gpio;
-	gpio_init(&gpio, pin);
+
+	gpio_init(&config->gpio, pin);
 
 	config->pin = pin;
 	result = modGPIOSetMode(config, mode);
@@ -52,26 +52,23 @@ void modGPIOUninit(modGPIOConfiguration config)
 
 int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 {
-	gpio_t gpio;
-	gpio.pin = config->pin;
-
 	switch (mode) {
 		case kModGPIOOutput:
 		case kModGPIOOutputOpenDrain:
-			gpio_dir(&gpio,PIN_OUTPUT);
-			gpio_mode(&gpio, PullNone);
+			gpio_dir(&config->gpio,PIN_OUTPUT);
+			gpio_mode(&config->gpio, PullNone);
 			break;
 
 		case kModGPIOInput:
 		case kModGPIOInputPullUp:
 		case kModGPIOInputPullDown:
 		//case kModGPIOInputPullUpDown:
-			gpio_dir(&gpio, PIN_INPUT);
+			gpio_dir(&config->gpio, PIN_INPUT);
 
 			if (kModGPIOInputPullUp == mode)
-				gpio_mode(&gpio, PullUp);
+				gpio_mode(&config->gpio, PullUp);
 			else if (kModGPIOInputPullDown == mode)
-				gpio_mode(&gpio, PullDown);
+				gpio_mode(&config->gpio, PullDown);
 			break;
 
 		default:
@@ -83,14 +80,10 @@ int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 
 uint8_t modGPIORead(modGPIOConfiguration config)
 {
-    gpio_t gpio;
-    gpio.pin = config->pin;
-    return gpio_read(&gpio);
+    return gpio_read(&config->gpio);
 }
 
 void modGPIOWrite(modGPIOConfiguration config, uint8_t value)
 {
-    gpio_t gpio;
-    gpio.pin = config->pin;
-    gpio_write(&gpio, value ? 1 : 0);
+    gpio_write(&config->gpio, value ? 1 : 0);
 }

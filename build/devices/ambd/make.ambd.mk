@@ -158,7 +158,8 @@ INC_DIRS = \
 	$(SDK_BASE)/component/common/bluetooth/realtek/sdk/inc/os \
 	$(SDK_BASE)/component/common/bluetooth/realtek/sdk/inc/bluetooth/profile/server \
 	$(SDK_BASE)/component/common/bluetooth/realtek/sdk/board/amebad/src \
-	$(SDK_BASE)/component/common/bluetooth/realtek/sdk/inc/app
+	$(SDK_BASE)/component/common/bluetooth/realtek/sdk/inc/app \
+	$(SDK_BASE)/component/common/mbed/hal_ext
 
 XS_OBJ = \
 	$(LIB_DIR)/xsHost.c.o \

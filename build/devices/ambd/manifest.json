@@ -10,8 +10,14 @@
 			"$(MODULES)/base/timer/mc/*"
 		]
 	},
+	"platforms": {
+		"ambd/*": {
+			"include": "./targets/ambd/manifest.json"
+		}
+	},
 	"preload": [
 		"time",
 		"timer"
 	]
+
 }

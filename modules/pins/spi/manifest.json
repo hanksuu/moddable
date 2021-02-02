@@ -20,6 +20,11 @@
 				"*": "$(MODULES)/pins/spi/qca4020/*"
 			}
 		},
+                "ambd": {
+                        "modules": {
+                                "*": "$(MODULES)/pins/spi/ambd/*"
+                        }
+                },
 		"...": {
 			"error": "pins/spi module unsupported"
 		}

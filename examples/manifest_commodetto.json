@@ -33,7 +33,12 @@
 				"setup/commodetto": "$(BUILD)/devices/gecko/setup/commodetto"
 			},
 			"preload": "setup/commodetto"
+		},
+		"ambd": {
+			"modules": {
+				"setup/commodetto": "$(BUILD)/devices/ambd/setup/commodetto"
+			},
+			"preload": "setup/commodetto"
 		}
-
 	}
 }
